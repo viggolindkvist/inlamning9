@@ -1,6 +1,5 @@
 // CONNECTION TO DATABASE
 var mysql = require("mysql");
-const { waitForDebugger } = require("inspector");
 var con = mysql.createConnection({
   host: "localhost",
   user: "root",
