@@ -1,5 +1,6 @@
-//CONNECTION 2 DATABASE
+// CONNECTION TO DATABASE
 var mysql = require("mysql");
+const { waitForDebugger } = require("inspector");
 var con = mysql.createConnection({
   host: "localhost",
   user: "root",
@@ -9,7 +10,7 @@ var con = mysql.createConnection({
 
 con.connect(function (err) {
   if (err) throw err;
-  console.log("Connected!");
+  console.log("Connected to database!");
 });
 
 // APPLICATION
@@ -24,25 +25,29 @@ app.get("/", (req, res) => {
   res.sendFile(__dirname + "/index.html");
 });
 
+server.listen(3000, () => {
+  console.log("Server listening on *:3000");
+});
+
 io.on("connection", (socket) => {
   console.log("a user connected");
-  socket.on("disconnect", () => {
-    console.log("user disconnected");
-  });
-});
+  socket.on("message", (data) => {
+    console.log(data);
+    socket.emit("receive message", data);
 
-io.on("connection", (socket) => {
-  socket.on("chat message", (msg) => {
-    console.log("message: " + msg);
+    const query = `SELECT output FROM bot_responses WHERE input = "${data}"`;
+    con.query(query, (err, results) => {
+      if (err) throw err;
+      if (results.length > 0) {
+        console.log("Lyckades med att hämta data");
+        socket.emit("receive message", results[0].output);
+      } else {
+        console.log("Misslyckades med att hämta data");
+        socket.emit(
+          "receive message",
+          "Har tyvärr inget svar på det, försök med någon annan fråga."
+        );
+      }
+    });
   });
-});
-
-io.on("connection", (socket) => {
-  socket.on("chat message", (msg) => {
-    io.emit("chat message", msg);
-  });
-});
-
-server.listen(3000, () => {
-  console.log("listening on *:3000");
 });
